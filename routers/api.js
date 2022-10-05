@@ -1,0 +1,46 @@
+const Router = require('koa-router');
+const router = new Router();
+const fs = require('fs');
+const { dbFind, dbInit, SongModel } = require('../db');
+
+
+
+// audio 标签 api
+router.get('/song', async (ctx, next) => {
+    console.log("ctx.query:", ctx.query);
+    let data = await SongModel.findById(ctx.query.id);
+    var readerStream = fs.createReadStream(data.url);
+    console.log(readerStream);
+    ctx.body = readerStream;
+});
+
+router.get('/songs', async (ctx, next) => {
+    let songs = await SongModel.find();
+    console.log(songs);
+    ctx.body = {
+        songs
+    };
+});
+
+let cfg;
+
+fs.readFile('config.json',
+    // 读取文件完成时调用的回调函数
+    function (err, data) {
+        // json数据
+        var jsonData = data;
+        // 解析json
+        cfg = JSON.parse(jsonData);
+        console.log(cfg);
+        // console.log(listFile(cfg.folders[0]));
+    });
+
+router.get('/db/init', (ctx, next) => {
+    dbInit(cfg);
+    ctx.body = {
+        ok: 1
+    }
+});
+
+module.exports = router;
+

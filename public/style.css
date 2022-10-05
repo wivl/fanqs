@@ -1,0 +1,52 @@
+* {
+    color: #ebdbb2;
+    background-color: #282828;
+}
+
+h1 {
+    margin-bottom: 0;
+}
+
+.hide {
+    display: none;
+}
+
+.green {
+    color: #98971a;
+}
+
+.yellow {
+    color: #d79921;
+}
+
+.red {
+    color: #cc241d;
+}
+
+.blue {
+    color: #458588;
+}
+
+.purple {
+    color: #b16286;
+}
+
+.grey {
+    color: #a89984;
+}
+
+.btn {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    text-align: center;
+}
+
+.btn:hover {
+    color: #f4ffff;
+}
+
+.inline {
+    display: inline;
+}

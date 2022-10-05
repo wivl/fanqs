@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Fanqs - Fuck Apple Music, Netease Cloud Music QQ Music and Spotify.</title>
+	<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.1/jquery.js"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/socket.io/4.5.2/socket.io.min.js"></script>
+	<script src="https://cdn.bootcdn.net/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+	<link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.2.0/css/all.css" rel="stylesheet">
+	<!-- <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.1/css/bootstrap.min.css" rel="stylesheet"> -->
+	<link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.2.1/css/bootstrap-grid.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+	<h1>fanqs</h1>
+	<!-- 最大分栏 -->
+	<div class="row">
+		<!-- 播放控制 -->
+		<div class="player-section col">
+			<audio id="audio" controls="controls" style="display: none;">
+				<source src="" id='song' type="audio/mpeg" />
+			</audio>
+			<p class="music-title" id="music-title"></p>
+			<p class="artist" id="artist"></p>
+			<span class="audio-time" id="currentTime">0</span>
+			<div class="timeline inline" id="timeline">-</div>
+			<span class="audio-time" id="audioTime">0</span>
+			<br>
+			<button class="btn green" id="prev">[prev]</button>
+			<button class="btn green" id="play">[play]</button>
+			<button class="btn green" id="next">[next]</button>
+			<button class="btn blue" id="random">[random]</button>
+			<button class="btn blue" id="demo">[demo]</button>
+			<br>
+			<button class="btn yellow" id="volume-down">[v-]</button>
+			<div class="volume col inline" id="volume">[100%]</div>
+			<button class="btn yellow" id="volume-up">[v+]</button>
+			<button class="btn blue" id="init">[refresh]</button>
+		</div>
+		<div class="text-section col">
+			<h1>Songs</h1>
+			<ul class="song-list" id="song-list">
+
+			</ul>
+		</div>
+		<div class="lib-section col">
+			this is for albums list.
+		</div>
+	</div>
+
+
+	<script>
+		const demo = document.getElementById("demo");
+		const audio = document.getElementById("audio");
+		const play = document.getElementById("play");
+		const volumeUp = document.getElementById("volume-up");
+		const volumeDown = document.getElementById("volume-down");
+		const volume = document.getElementById("volume");
+		const audioTime = document.getElementById("audioTime");
+		const currentTime = document.getElementById("currentTime");
+		const title = document.getElementById("music-title");
+		const artist = document.getElementById("artist");
+		const timeline = document.getElementById("timeline");
+		const init = document.getElementById("init");
+		const songList = document.getElementById("song-list");
+
+		window.onload = () => {
+			getSongs();
+		}
+
+		function getSongs() {
+			fetch('/api/songs', {
+				method: 'GET', // or 'PUT'
+				headers: {
+					'Content-Type': 'application/json',
+				}
+			})
+				.then(response => response.json())
+				.then(data => {
+					console.log(data.songs);
+					// 创建 list
+					let listHTML = "";
+					for (let li of data.songs) {
+						listHTML += `<li><a href="#" class="btn green song" onClick="songOnclick('${li._id}')">${li.title} - ${li.artist}</a></li>`;
+					}
+					songList.innerHTML = listHTML;
+				}).catch((error) => {
+					console.error('Error:', error);
+				});
+		}
+
+
+		function setPlay() {
+			play.innerHTML = "[pause]";
+		}
+
+		function setPause() {
+			play.innerHTML = "[play]";
+		}
+
+		function transTime(time) {
+			var duration = parseInt(time);
+			var minute = parseInt(duration / 60);
+			var sec = duration % 60 + '';
+			var isM0 = ':';
+			if (minute == 0) {
+				minute = '00';
+			} else if (minute < 10) {
+				minute = '0' + minute;
+			}
+			if (sec.length == 1) {
+				sec = '0' + sec;
+			}
+			return minute + isM0 + sec
+		}
+
+		//更新进度条
+		function updateProgress() {
+			var value = Math.round((Math.floor(audio.currentTime) / Math.floor(audio.duration)) * 100, 0);
+			// TODO: 进度条动画
+			// $('.pgs-play').css('width', value * 0.907 + '%');
+			currentTime.innerHTML = transTime(audio.currentTime);
+		}
+
+
+		audio.volume = 1;
+
+		const socket = io("http://localhost:8964");
+
+		audio.addEventListener("loadedmetadata", () => {
+			console.log(audio.duration);
+			audioTime.innerHTML = transTime(audio.duration);
+		});
+
+		audio.addEventListener('timeupdate', updateProgress, false);
+
+		// song list button
+		function songOnclick(id) {
+			console.log(id);
+			audio.src = 'http://localhost:8964/api/song?' + `id=${id}`;
+			console.log(audio.src);
+			audio.load();
+			setPlay();
+			audio.play();
+		}
+
+
+
+		// play controll
+		play.onclick = () => {
+			if (audio.paused) {
+				audio.play();
+				setPlay();
+			} else {
+				audio.pause();
+				setPause();
+			}
+		};
+
+		// pay no mind demo
+		demo.onclick = () => {
+			let id = '633bae862a504658e875e540';
+			audio.src = 'http://localhost:8964/api/song?' + `id=${id}`;
+			// socket.emit('music', '633bae862a504658e875e52e');
+			// socket.on('play-song', (api) => {
+			// 	console.log(api);
+			// 	audio.src = 'http://localhost:8964/api/song?' + `id=${api.id}`;
+			// 	// title.innerHTML = api.title;
+			// 	// artist.innerHTML = api.artist;
+			console.log(audio.src);
+			audio.load();
+			setPlay();
+			audio.play();
+			// });
+		}
+
+		init.onclick = () => {
+			fetch('/api/db/init', {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json'
+					// 'Content-Type': 'application/x-www-form-urlencoded',
+				}
+			}).then((data) => {
+				console.log(data);
+			})
+		}
+
+		// volume controll
+		volumeUp.onclick = () => {
+			if (audio.volume < 1) {
+				if (audio.volume + 0.05 > 1) {
+					audio.volume = 1;
+				} else {
+					audio.volume += 0.05;
+				}
+				volume.innerHTML = `[${(audio.volume * 100).toFixed(0)}%]`;
+			}
+			// let volumeValue = parseInt(volume.text().replace(/[^\d]/g, " "));
+			// if (volumeValue < 100) {
+			// 	volumeValue += 5;
+			// 	//TODO: 音量加
+			// 	volume.innerHTML = `[${volumeValue}%]`;
+			// }
+		};
+		volumeDown.onclick = () => {
+			if (audio.volume > 0) {
+				if (audio.volume - 0.05 < 0) {
+					audio.volume = 0;
+				} else {
+					audio.volume -= 0.05;
+				}
+
+				console.log(audio.volume);
+				volume.innerHTML = `[${(audio.volume * 100).toFixed(0)}%]`;
+			}
+			// let volumeValue = parseInt(volume.text().replace(/[^\d]/g, " "));
+			// if (volumeValue > 0) {
+			// 	volumeValue -= 5;
+			// 	//TODO: 音量减
+			// 	volume.innerHTML = `[${volumeValue}%]`;
+			// }
+		};
+
+
+
+
+	</script>
+</body>
+
+</html>
