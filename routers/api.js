@@ -53,8 +53,8 @@ fs.readFile('config.json',
         // console.log(listFile(cfg.folders[0]));
     });
 
-router.get('/db/init', (ctx, next) => {
-    dbInit(cfg);
+router.get('/db/init', async (ctx, next) => {
+    await dbInit(cfg);
     ctx.body = {
         ok: 1
     }

@@ -41,31 +41,30 @@ function listFile(dir, list = []) {
 
 function dbInit(cfg) {
     console.log(cfg);
-    SongModel.deleteMany({},function(err){})
-    let songs = listFile(cfg.folders[0]);
-    for (let song of songs) {
-        jsmediatags.read(song, {
-            onSuccess: function (tag) {
-                SongModel.create({
-                    title: tag.tags.title,
-                    artist: tag.tags.artist,
-                    album: tag.tags.album,
-                    track: tag.tags.track,
-                    url: song
-                }, (err, docs) => {
-                    if (!err) {
-                        console.log('插入成功' + docs)
-                    }
-                })
-            },
-            onError: function (error) {
-                console.log(':(', error.type, error.info);
-            }
-        });
-        
+    SongModel.deleteMany({}, function (err) { });
+    for (let folder of cfg.folders) {
+        let songs = listFile(folder);
+        for (let song of songs) {
+            jsmediatags.read(song, {
+                onSuccess: function (tag) {
+                    SongModel.create({
+                        title: tag.tags.title,
+                        artist: tag.tags.artist,
+                        album: tag.tags.album,
+                        track: tag.tags.track,
+                        url: song
+                    }, (err, docs) => {
+                        if (!err) {
+                            console.log('插入成功' + docs)
+                        }
+                    })
+                },
+                onError: function (error) {
+                    console.log(':(', error.type, error.info);
+                }
+            });
+        }
     }
-
-
 }
 
 // TODO: 数据库查找

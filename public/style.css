@@ -68,3 +68,12 @@ h1 {
 .album:hover {
     color: #f4ffff;
 }
+
+.add {
+    list-style: none;
+    text-decoration: none;
+}
+
+.add:hover {
+    color: #f4ffff;
+}

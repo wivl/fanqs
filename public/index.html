@@ -35,12 +35,14 @@
 			<button class="btn green" id="play">[play]</button>
 			<button class="btn green" id="next">[next]</button>
 			<button class="btn blue" id="random">[random]</button>
-			<button class="btn blue" id="demo">[demo]</button>
 			<br>
 			<button class="btn yellow" id="volume-down">[v-]</button>
 			<div class="volume col inline" id="volume">[50%]</div>
 			<button class="btn yellow" id="volume-up">[v+]</button>
 			<button class="btn blue" id="init">[refresh]</button>
+			<br>
+			<h2>playlist</h2>
+			<ul class="song-list" id="playlist"></ul>
 		</div>
 		<div class="text-section col">
 			<h1>Songs</h1>
@@ -61,6 +63,8 @@
 		const demo = document.getElementById("demo");
 		const audio = document.getElementById("audio");
 		const play = document.getElementById("play");
+		const prev = document.getElementById("prev");
+		const next = document.getElementById("next");
 		const volumeUp = document.getElementById("volume-up");
 		const volumeDown = document.getElementById("volume-down");
 		const volume = document.getElementById("volume");
@@ -72,7 +76,22 @@
 		const init = document.getElementById("init");
 		const songList = document.getElementById("song-list");
 		const albumList = document.getElementById("album-list");
+		const playlist = document.getElementById("playlist");
 
+
+		// 播放模式
+		const PLAY_MODE = {
+			ORDER: 0,
+			LOOP: 1,
+			REPEAT: 2,
+			RANDOM: 3
+		};
+
+		let play_mode = PLAY_MODE.LOOP;
+
+		// 播放列表
+		let currentPlaylist = [];
+		let playingIndex = 0;
 
 		window.onload = () => {
 			getSongs();
@@ -92,14 +111,14 @@
 					let albumHTML = `<li class="album"><a href="javascript:;" class="blue album" onClick="albumOnclick('')">[all]</a></li>`;
 					// songs = data.songs.slice(0);
 					// 创建 list
-					let listHTML = "";
+					let listHTML = `<li class="song"><a href="javascript:;" class="blue song" onClick="playAllOnclick('')">[play all]</a></li>`;
 					for (let li of data.songs) {
 						// 按 album 分类
 						if (!albumArr.includes(li.album)) {
 							albumArr.push(li.album);
 							albumHTML += `<li class="album"><a href="javascript:;" class="green album" onClick="albumOnclick('${li.album}')">${li.album}</a></li>`;
 						}
-						listHTML += `<li class="song"><a href="javascript:;" class="green song" onClick="songOnclick('${li._id}')">${li.title} - ${li.artist}</a></li>`;
+						listHTML += `<li class="song"><a href="javascript:;" class="add yellow" onClick="addOnclick('${li._id}')">[+]</a><a href="javascript:;" class="green song" onClick="songOnclick('${li._id}')">${li.title} - ${li.artist}</a></li>`;
 					}
 					songList.innerHTML = listHTML;
 					albumList.innerHTML = albumHTML;
@@ -153,19 +172,54 @@
 
 		audio.addEventListener('timeupdate', updateProgress, false);
 
+		audio.addEventListener('playing', () => {
+			setPlay();
+		}, false);
+
+		audio.addEventListener('pause', () => {
+			// if (play_mode !== PLAY_MODE.REPEAT && playingIndex == currentPlaylist.length - 1) {
+			setPause();
+			// }
+
+		}, false);
+
+		audio.addEventListener('ended', () => {
+			switch (play_mode) {
+				case PLAY_MODE.REPEAT:
+					audio.play();
+					break;
+				case PLAY_MODE.LOOP:
+					if (playingIndex === currentPlaylist.length - 1) {
+						playingIndex = 0;
+					} else {
+						playingIndex += 1;
+					}
+					songOnclick(currentPlaylist[playingIndex]);
+					break;
+				default:
+					// 默认 repeat
+					audio.play();
+					break;
+			}
+		}, false);
+
 		// song list button
 		function songOnclick(id) {
 			console.log(id);
-			audio.src = 'http://localhost:8964/api/song?' + `id=${id}`;
+			currentPlaylist.splice(0, currentPlaylist.length);
+			playlist.innerHTML = "";
+			currentPlaylist.push(id);
+			playingIndex = 0;
+			audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
 			console.log(audio.src);
 			getInfo(id);
 			audio.load();
-			setPlay();
+			// setPlay();
 			audio.play();
 		}
 
 		function albumOnclick(album) {
-			console.log(album);
+			// console.log(album);
 			fetch(`/api/songs?album=${album}`, {
 				method: 'GET', // or 'PUT'
 				headers: {
@@ -174,16 +228,49 @@
 			})
 				.then(response => response.json())
 				.then(data => {
-					console.log(data.songs);
-					let listHTML = "";
+					// console.log(data.songs);
+					let listHTML = `<li class="song"><a href="javascript:;" class="blue song" onClick="playAllOnclick('${album}')">[play all]</a></li>`;
 					for (let li of data.songs) {
-						listHTML += `<li class="song"><a href="javascript:;" class="green song" onClick="songOnclick('${li._id}')">${li.title} - ${li.artist}</a></li>`;
+						listHTML += `<li class="song"><a href="javascript:;" class="add yellow" onClick="addOnclick('${li._id}')">[+]</a><a href="javascript:;" class="green song" onClick="songOnclick('${li._id}')">${li.title} - ${li.artist}</a></li>`;
 					}
 					songList.innerHTML = listHTML;
 				}).catch((error) => {
 					console.error('Error:', error);
 				});
 		}
+
+		function playAllOnclick(album) {
+			fetch(`/api/songs?album=${album}`, {
+				method: 'GET', // or 'PUT'
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			})
+				.then(response => response.json())
+				.then(data => {
+
+					currentPlaylist.splice(0, currentPlaylist.length);
+					playlist.innerHTML = "";
+					for (let li of data.songs) {
+						currentPlaylist.push(li._id);
+						playlist.innerHTML += `<li class="song">${li.title}</li>`;
+					}
+					playingIndex = 0;
+					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
+					audio.play();
+				}).catch((error) => {
+					console.error('Error:', error);
+				});
+
+		}
+
+		// TODO: 添加到播放列表
+		// function addOnclick(id) {
+		// 	console.log("add:", id);
+		// 	currentPlaylist.push(id);
+		// 	playlist.innerHTML += `<li class="song">${id}</li>`;
+		// 	// TODO: show list
+		// }
 
 		function getInfo(id) {
 			fetch(`/api/info?id=${id}`, {
@@ -209,29 +296,41 @@
 		play.onclick = () => {
 			if (audio.paused) {
 				audio.play();
-				setPlay();
+				// setPlay();
 			} else {
 				audio.pause();
-				setPause();
+				// setPause();
 			}
 		};
 
-		// pay no mind demo
-		demo.onclick = () => {
-			let id = '633bae862a504658e875e540';
-			audio.src = 'http://localhost:8964/api/song?' + `id=${id}`;
-			// socket.emit('music', '633bae862a504658e875e52e');
-			// socket.on('play-song', (api) => {
-			// 	console.log(api);
-			// 	audio.src = 'http://localhost:8964/api/song?' + `id=${api.id}`;
-			// 	// title.innerHTML = api.title;
-			// 	// artist.innerHTML = api.artist;
+		next.onclick = () => {
+			if (playingIndex === currentPlaylist.length - 1) {
+				playingIndex = 0;
+			} else {
+				playingIndex += 1;
+			}
+			audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
 			console.log(audio.src);
+			getInfo(currentPlaylist[playingIndex]);
 			audio.load();
-			setPlay();
+			// setPlay();
 			audio.play();
-			// });
 		}
+		
+		prev.onclick = () => {
+			if (playingIndex === 0) {
+				playingIndex = currentPlaylist.length - 1;
+			} else {
+				playingIndex -= 1;
+			}
+			audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
+			console.log(audio.src);
+			getInfo(currentPlaylist[playingIndex]);
+			audio.load();
+			// setPlay();
+			audio.play();
+		}
+
 
 		init.onclick = () => {
 			fetch('/api/db/init', {
@@ -255,12 +354,6 @@
 				}
 				volume.innerHTML = `[${(audio.volume * 100).toFixed(0)}%]`;
 			}
-			// let volumeValue = parseInt(volume.text().replace(/[^\d]/g, " "));
-			// if (volumeValue < 100) {
-			// 	volumeValue += 5;
-			// 	//TODO: 音量加
-			// 	volume.innerHTML = `[${volumeValue}%]`;
-			// }
 		};
 		volumeDown.onclick = () => {
 			if (audio.volume > 0) {
