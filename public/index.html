@@ -106,6 +106,13 @@
 			})
 				.then(response => response.json())
 				.then(data => {
+					data.songs.sort((a, b) => {
+						if (a.album == b.album) {
+							return parseInt(a.track) - parseInt(b.track);
+						} else {
+							return a.album > b.album;
+						}
+					});
 					console.log(data.songs);
 					let albumArr = [];
 					let albumHTML = `<li class="album"><a href="javascript:;" class="blue album" onClick="albumOnclick('')">[all]</a></li>`;
@@ -231,6 +238,13 @@
 			})
 				.then(response => response.json())
 				.then(data => {
+					data.songs.sort((a, b) => {
+						if (a.album == b.album) {
+							return parseInt(a.track) - parseInt(b.track);
+						} else {
+							return a.album > b.album;
+						}
+					});
 					// console.log(data.songs);
 					let listHTML = `<li class="song"><a href="javascript:;" class="blue song" onClick="playAllOnclick('${album}')">[play all]</a></li>`;
 					for (let li of data.songs) {
