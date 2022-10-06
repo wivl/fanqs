@@ -5,7 +5,7 @@ const { dbFind, dbInit, SongModel } = require('../db');
 
 
 
-// audio 标签 api
+// audio play song api
 router.get('/song', async (ctx, next) => {
     console.log("ctx.query:", ctx.query);
     let data = await SongModel.findById(ctx.query.id);
@@ -14,8 +14,26 @@ router.get('/song', async (ctx, next) => {
     ctx.body = readerStream;
 });
 
+// song tags api
+router.get('/info', async (ctx, next) => {
+    console.log("ctx.query:", ctx.query);
+    let data = await SongModel.findById(ctx.query.id);
+    ctx.body = {
+        title: data.title,
+        artist: data.artist,
+        album: data.album,
+        track: data.track
+    };
+})
+
 router.get('/songs', async (ctx, next) => {
-    let songs = await SongModel.find();
+    let songs;
+    if (ctx.query.album !== "") {
+        songs = await SongModel.find({album: ctx.query.album});
+    } else {
+        songs = await SongModel.find();
+    }
+    
     console.log(songs);
     ctx.body = {
         songs

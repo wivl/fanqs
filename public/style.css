@@ -50,3 +50,21 @@ h1 {
 .inline {
     display: inline;
 }
+
+.song {
+    list-style: none;
+    text-decoration: none;
+}
+
+.song:hover {
+    color: #f4ffff;
+}
+
+.album {
+    list-style: none;
+    text-decoration: none;
+}
+
+.album:hover {
+    color: #f4ffff;
+}

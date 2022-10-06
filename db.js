@@ -41,6 +41,7 @@ function listFile(dir, list = []) {
 
 function dbInit(cfg) {
     console.log(cfg);
+    SongModel.deleteMany({},function(err){})
     let songs = listFile(cfg.folders[0]);
     for (let song of songs) {
         jsmediatags.read(song, {

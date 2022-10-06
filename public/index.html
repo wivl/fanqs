@@ -38,7 +38,7 @@
 			<button class="btn blue" id="demo">[demo]</button>
 			<br>
 			<button class="btn yellow" id="volume-down">[v-]</button>
-			<div class="volume col inline" id="volume">[100%]</div>
+			<div class="volume col inline" id="volume">[50%]</div>
 			<button class="btn yellow" id="volume-up">[v+]</button>
 			<button class="btn blue" id="init">[refresh]</button>
 		</div>
@@ -49,7 +49,10 @@
 			</ul>
 		</div>
 		<div class="lib-section col">
-			this is for albums list.
+			<h1>Albums</h1>
+			<ul class="album-list" id="album-list">
+
+			</ul>
 		</div>
 	</div>
 
@@ -68,27 +71,38 @@
 		const timeline = document.getElementById("timeline");
 		const init = document.getElementById("init");
 		const songList = document.getElementById("song-list");
+		const albumList = document.getElementById("album-list");
+
 
 		window.onload = () => {
 			getSongs();
 		}
 
 		function getSongs() {
-			fetch('/api/songs', {
+			fetch(`/api/songs?album=`, {
 				method: 'GET', // or 'PUT'
 				headers: {
-					'Content-Type': 'application/json',
+					'Content-Type': 'application/json'
 				}
 			})
 				.then(response => response.json())
 				.then(data => {
 					console.log(data.songs);
+					let albumArr = [];
+					let albumHTML = `<li class="album"><a href="javascript:;" class="blue album" onClick="albumOnclick('')">[all]</a></li>`;
+					// songs = data.songs.slice(0);
 					// 创建 list
 					let listHTML = "";
 					for (let li of data.songs) {
-						listHTML += `<li><a href="#" class="btn green song" onClick="songOnclick('${li._id}')">${li.title} - ${li.artist}</a></li>`;
+						// 按 album 分类
+						if (!albumArr.includes(li.album)) {
+							albumArr.push(li.album);
+							albumHTML += `<li class="album"><a href="javascript:;" class="green album" onClick="albumOnclick('${li.album}')">${li.album}</a></li>`;
+						}
+						listHTML += `<li class="song"><a href="javascript:;" class="green song" onClick="songOnclick('${li._id}')">${li.title} - ${li.artist}</a></li>`;
 					}
 					songList.innerHTML = listHTML;
+					albumList.innerHTML = albumHTML;
 				}).catch((error) => {
 					console.error('Error:', error);
 				});
@@ -128,7 +142,7 @@
 		}
 
 
-		audio.volume = 1;
+		audio.volume = 0.5;
 
 		const socket = io("http://localhost:8964");
 
@@ -144,9 +158,49 @@
 			console.log(id);
 			audio.src = 'http://localhost:8964/api/song?' + `id=${id}`;
 			console.log(audio.src);
+			getInfo(id);
 			audio.load();
 			setPlay();
 			audio.play();
+		}
+
+		function albumOnclick(album) {
+			console.log(album);
+			fetch(`/api/songs?album=${album}`, {
+				method: 'GET', // or 'PUT'
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			})
+				.then(response => response.json())
+				.then(data => {
+					console.log(data.songs);
+					let listHTML = "";
+					for (let li of data.songs) {
+						listHTML += `<li class="song"><a href="javascript:;" class="green song" onClick="songOnclick('${li._id}')">${li.title} - ${li.artist}</a></li>`;
+					}
+					songList.innerHTML = listHTML;
+				}).catch((error) => {
+					console.error('Error:', error);
+				});
+		}
+
+		function getInfo(id) {
+			fetch(`/api/info?id=${id}`, {
+				method: 'GET', // or 'PUT'
+				headers: {
+					'Content-Type': 'application/json',
+				}
+			})
+				.then(response => response.json())
+				.then(data => {
+					console.log(data);
+					title.innerHTML = data.title;
+					artist.innerHTML = data.artist;
+				})
+				.catch((error) => {
+					console.error('Error:', error);
+				});
 		}
 
 
