@@ -257,6 +257,8 @@
 					}
 					playingIndex = 0;
 					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
+					audio.load();
+					getInfo(currentPlaylist[playingIndex]);
 					audio.play();
 				}).catch((error) => {
 					console.error('Error:', error);
