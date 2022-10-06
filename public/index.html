@@ -194,7 +194,10 @@
 					} else {
 						playingIndex += 1;
 					}
-					songOnclick(currentPlaylist[playingIndex]);
+					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
+					audio.load();
+					getInfo(currentPlaylist[playingIndex]);
+					audio.play();
 					break;
 				default:
 					// 默认 repeat
