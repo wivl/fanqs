@@ -265,6 +265,13 @@
 			})
 				.then(response => response.json())
 				.then(data => {
+					data.songs.sort((a, b) => {
+						if (a.album == b.album) {
+							return parseInt(a.track) - parseInt(b.track);
+						} else {
+							return a.album > b.album;
+						}
+					});
 
 					currentPlaylist.splice(0, currentPlaylist.length);
 					playlist.innerHTML = "";
