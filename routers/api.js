@@ -19,6 +19,7 @@ router.get('/info', async (ctx, next) => {
     console.log("ctx.query:", ctx.query);
     let data = await SongModel.findById(ctx.query.id);
     ctx.body = {
+        id: data._id,
         title: data.title,
         artist: data.artist,
         album: data.album,

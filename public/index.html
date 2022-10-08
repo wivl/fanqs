@@ -194,6 +194,13 @@
 				});
 		}
 
+		// 删除数组指定值的元素
+		function arrayRemove(arr, value) {
+			return arr.filter(function (ele) {
+				return ele != value;
+			});
+		}
+
 		//========================
 		// event listener
 		//========================
@@ -361,9 +368,9 @@
 						audio.play();
 					}
 					break;
-					// TODO: random
+				// TODO: random
 				// case PLAY_MODE.RANDOM:
-					
+
 				// 	break;
 
 				default:
@@ -455,7 +462,7 @@
 					playlist.innerHTML = "";
 					for (let li of data.songs) {
 						currentPlaylist.push(li._id);
-						playlist.innerHTML += `<li class="song">${li.title}</li>`;
+						playlist.innerHTML += `<li class="song">${li.title}<a href="javascript:;" class="add yellow" onClick="deleteOnclick('${li._id}')">[-]</a></li>`;
 					}
 					playingIndex = 0;
 					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
@@ -471,31 +478,61 @@
 		// TODO: 添加到播放列表
 		function addOnclick(id) {
 			console.log("add:", id);
-			currentPlaylist.push(id);
-			if (currentPlaylist.length == 1) {
-				playlist.innerHTML = "";
-				playingIndex = 0;
-				audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
-				audio.load();
-				getInfo(currentPlaylist[playingIndex]);
-				audio.play();
-			}
-			fetch(`/api/info?id=${id}`, {
-				method: 'GET', // or 'PUT'
-				headers: {
-					'Content-Type': 'application/json',
+			if (!currentPlaylist.includes(id)) {
+				currentPlaylist.push(id);
+				if (currentPlaylist.length == 1) {
+					playlist.innerHTML = "";
+					playingIndex = 0;
+					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
+					audio.load();
+					getInfo(currentPlaylist[playingIndex]);
+					audio.play();
 				}
-			})
-				.then(response => response.json())
-				.then(data => {
-					playlist.innerHTML += `<li class="song">${data.title}</li>`;
+				fetch(`/api/info?id=${id}`, {
+					method: 'GET', // or 'PUT'
+					headers: {
+						'Content-Type': 'application/json',
+					}
 				})
-				.catch((error) => {
-					console.error('Error:', error);
-				});
+					.then(response => response.json())
+					.then(data => {
+						console.log(data.title, ":", data.id);
+						playlist.innerHTML += `<li class="song">${data.title}<a href="javascript:;" class="add yellow" onClick="deleteOnclick('${data.id}')">[-]</a></li>`;
+					})
+					.catch((error) => {
+						console.error('Error:', error);
+					});
+			} else {
+				console.log("[error] Already exists");
+			}
+
 			// TODO: show list
 		}
 
+		// TODO: delete a song from playlist
+		async function deleteOnclick(id) {
+			console.log(id);
+			currentPlaylist = arrayRemove(currentPlaylist, id);
+			console.log(currentPlaylist);
+			playlist.innerHTML = "";
+			for (let songid of currentPlaylist) {
+				await fetch(`/api/info?id=${songid}`, {
+					method: 'GET', // or 'PUT'
+					headers: {
+						'Content-Type': 'application/json',
+					}
+				})
+					.then(response => response.json())
+					.then(data => {
+						console.log(data.title, ":", data.id);
+						playlist.innerHTML += `<li class="song">${data.title}<a href="javascript:;" class="add yellow" onClick="deleteOnclick('${data.id}')">[-]</a></li>`;
+					})
+					.catch((error) => {
+						console.error('Error:', error);
+					});
+			}
+		}
+		// TODO: 将播放列表数组元素改为包含信息的结构体
 
 	</script>
 </body>
