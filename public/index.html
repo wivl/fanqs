@@ -155,7 +155,7 @@
 							return a.album > b.album;
 						}
 					});
-					console.log(data.songs);
+					// console.log(data.songs);
 					let albumArr = [];
 					let albumHTML = `<li class="album"><a href="javascript:;" class="blue album" onClick="albumOnclick('')">[all]</a></li>`;
 					// songs = data.songs.slice(0);
@@ -185,7 +185,7 @@
 			})
 				.then(response => response.json())
 				.then(data => {
-					console.log(data);
+					// console.log(data);
 					title.innerHTML = data.title;
 					artist.innerHTML = data.artist;
 				})
@@ -194,10 +194,20 @@
 				});
 		}
 
+		function updateIndex() {
+			for (let i in currentPlaylist) {
+				// console.log(typeof i);
+				if (currentPlaylist[i].playing) {
+					playingIndex = parseInt(i);
+					console.log("in updateIndex(), change index to:", i);
+				}
+			}
+		}
+
 		// 删除数组指定值的元素
 		function arrayRemove(arr, value) {
 			return arr.filter(function (ele) {
-				return ele != value;
+				return ele.id != value;
 			});
 		}
 
@@ -220,28 +230,38 @@
 		};
 
 		next.onclick = () => {
+			// console.log(currentPlaylist, playingIndex);
+			console.log("in next.onclick(), playingIndex is:", playingIndex);
+			currentPlaylist[playingIndex].playing = false;
 			if (playingIndex === currentPlaylist.length - 1) {
 				playingIndex = 0;
 			} else {
 				playingIndex += 1;
 			}
-			audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
-			console.log(audio.src);
-			getInfo(currentPlaylist[playingIndex]);
+			console.log("in next.onclick(), change index to:", playingIndex);
+			currentPlaylist[playingIndex].playing = true;
+			// console.log("after:", playindex);
+			audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
+			// console.log(audio.src);
+			getInfo(currentPlaylist[playingIndex].id);
 			audio.load();
 			// setPlay();
 			audio.play();
 		}
 
 		prev.onclick = () => {
+			console.log("in prev.onclick(), playingIndex is:", playingIndex);
+			currentPlaylist[playingIndex].playing = false;
 			if (playingIndex === 0) {
 				playingIndex = currentPlaylist.length - 1;
 			} else {
 				playingIndex -= 1;
 			}
-			audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
-			console.log(audio.src);
-			getInfo(currentPlaylist[playingIndex]);
+			console.log("in prev.onclick(), change index to:", playingIndex);
+			currentPlaylist[playingIndex].playing = true;
+			audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
+			// console.log(audio.src);
+			getInfo(currentPlaylist[playingIndex].id);
 			audio.load();
 			// setPlay();
 			audio.play();
@@ -316,7 +336,7 @@
 		// 更新时间
 		audio.addEventListener("loadedmetadata", () => {
 			console.log("[event] loadedmetadata");
-			console.log(audio.duration);
+			// console.log(audio.duration);
 			audioTime.innerHTML = transTime(audio.duration);
 		});
 		audio.addEventListener('timeupdate', updateProgress, false);
@@ -343,30 +363,37 @@
 					audio.play();
 					break;
 				case PLAY_MODE.LOOP:
+				console.log("in ended event, playingIndex is:", playingIndex);
+					// console.log(currentPlaylist, playingIndex);
+					currentPlaylist[playingIndex].playing = false;
 					if (playingIndex === currentPlaylist.length - 1) {
 						playingIndex = 0;
 					} else {
 						playingIndex += 1;
 					}
-					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
+					console.log("in ended event(), playingIndex is:", playingIndex);
+					currentPlaylist[playingIndex].playing = true;
+					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
 					audio.load();
-					getInfo(currentPlaylist[playingIndex]);
+					getInfo(currentPlaylist[playingIndex].id);
 					audio.play();
 					break;
 				case PLAY_MODE.ORDER:
 					console.log("order mode");
+					currentPlaylist[playingIndex].playing = false;
 					if (playingIndex === currentPlaylist.length - 1) {
 						playingIndex = 0;
-						audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
+						audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
 						audio.load();
-						getInfo(currentPlaylist[playingIndex]);
+						getInfo(currentPlaylist[playingIndex].id);
 					} else {
 						playingIndex += 1;
-						audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
+						audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
 						audio.load();
-						getInfo(currentPlaylist[playingIndex]);
+						getInfo(currentPlaylist[playingIndex].id);
 						audio.play();
 					}
+					currentPlaylist[playingIndex].playing = true;
 					break;
 				// TODO: random
 				// case PLAY_MODE.RANDOM:
@@ -389,7 +416,7 @@
 
 			currentPlaylist.splice(0, currentPlaylist.length);
 			playlist.innerHTML = "";
-			currentPlaylist.push(id);
+
 			fetch(`/api/info?id=${id}`, {
 				method: 'GET', // or 'PUT'
 				headers: {
@@ -398,15 +425,20 @@
 			})
 				.then(response => response.json())
 				.then(data => {
+					currentPlaylist.push({
+						id: data.id,
+						playing: true
+					});
 					playlist.innerHTML = `<li class="song">${data.title}</li>`;
 				})
 				.catch((error) => {
 					console.error('Error:', error);
 				});
 			playingIndex = 0;
+			console.log("in songOnclick(), change index to:", playingIndex);
 
-			audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
-			console.log(audio.src);
+			audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
+			// console.log(audio.src);
 			getInfo(id);
 			audio.load();
 			// setPlay();
@@ -461,13 +493,20 @@
 					currentPlaylist.splice(0, currentPlaylist.length);
 					playlist.innerHTML = "";
 					for (let li of data.songs) {
-						currentPlaylist.push(li._id);
+						currentPlaylist.push({
+							id: li._id,
+							playing: false
+						});
 						playlist.innerHTML += `<li class="song">${li.title}<a href="javascript:;" class="add yellow" onClick="deleteOnclick('${li._id}')">[-]</a></li>`;
 					}
+					// 更新第一个的播放状态
 					playingIndex = 0;
-					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
+					console.log("in playAllOnclick(), change index to:", playingIndex);
+					currentPlaylist[playingIndex].playing = true;
+
+					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
 					audio.load();
-					getInfo(currentPlaylist[playingIndex]);
+					getInfo(currentPlaylist[playingIndex].id);
 					audio.play();
 				}).catch((error) => {
 					console.error('Error:', error);
@@ -477,17 +516,8 @@
 
 		// TODO: 添加到播放列表
 		function addOnclick(id) {
-			console.log("add:", id);
-			if (!currentPlaylist.includes(id)) {
-				currentPlaylist.push(id);
-				if (currentPlaylist.length == 1) {
-					playlist.innerHTML = "";
-					playingIndex = 0;
-					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex]}`;
-					audio.load();
-					getInfo(currentPlaylist[playingIndex]);
-					audio.play();
-				}
+			// console.log("add:", id);
+			if (!currentPlaylist.find((item => item.id == id))) { // TODO: 
 				fetch(`/api/info?id=${id}`, {
 					method: 'GET', // or 'PUT'
 					headers: {
@@ -496,12 +526,29 @@
 				})
 					.then(response => response.json())
 					.then(data => {
-						console.log(data.title, ":", data.id);
+						// console.log(data.title, ":", data.id);
 						playlist.innerHTML += `<li class="song">${data.title}<a href="javascript:;" class="add yellow" onClick="deleteOnclick('${data.id}')">[-]</a></li>`;
+						currentPlaylist.push({
+							id: data.id,
+							playing: false
+						});
+						if (currentPlaylist.length == 1) {
+							playlist.innerHTML = "";
+							playingIndex = 0;
+							console.log("in addOnclick(), change index to:", playingIndex);
+							currentPlaylist[playingIndex].playing = true;
+							audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
+							audio.load();
+							getInfo(currentPlaylist[playingIndex].id);
+							audio.play();
+						}
 					})
 					.catch((error) => {
 						console.error('Error:', error);
 					});
+					updateIndex();
+
+
 			} else {
 				console.log("[error] Already exists");
 			}
@@ -511,12 +558,12 @@
 
 		// TODO: delete a song from playlist
 		async function deleteOnclick(id) {
-			console.log(id);
+			// console.log(id);
 			currentPlaylist = arrayRemove(currentPlaylist, id);
-			console.log(currentPlaylist);
+			// console.log(currentPlaylist);
 			playlist.innerHTML = "";
-			for (let songid of currentPlaylist) {
-				await fetch(`/api/info?id=${songid}`, {
+			for (let song of currentPlaylist) {
+				await fetch(`/api/info?id=${song.id}`, {
 					method: 'GET', // or 'PUT'
 					headers: {
 						'Content-Type': 'application/json',
@@ -531,8 +578,25 @@
 						console.error('Error:', error);
 					});
 			}
+			updateIndex();
 		}
 		// TODO: 将播放列表数组元素改为包含信息的结构体
+		// 保留下标保存 在每次更改播放列表操作之后更新下标
+		// 结构体内保存 bool 值判断是否为当前播放
+		//
+		//
+
+		// TODO: 修改播放列表逻辑 在结构体中加上播放标记
+		// TODO: 保存、读取播放列表到 json
+		// TODO: 随机播放功能
+		// TODO: 登录鉴权
+		// TODO: 配置文件组织
+		// TODO: 部署测试
+		// TODO: 代码工程化
+
+		// TODO: 响应式网页
+		// TODO: 网页美化
+		// TODO: 文档撰写
 
 	</script>
 </body>
