@@ -363,7 +363,7 @@
 					audio.play();
 					break;
 				case PLAY_MODE.LOOP:
-				console.log("in ended event, playingIndex is:", playingIndex);
+					console.log("in ended event, playingIndex is:", playingIndex);
 					// console.log(currentPlaylist, playingIndex);
 					currentPlaylist[playingIndex].playing = false;
 					if (playingIndex === currentPlaylist.length - 1) {
@@ -515,10 +515,10 @@
 		}
 
 		// TODO: 添加到播放列表
-		function addOnclick(id) {
+		async function addOnclick(id) {
 			// console.log("add:", id);
-			if (!currentPlaylist.find((item => item.id == id))) { // TODO: 
-				fetch(`/api/info?id=${id}`, {
+			if (!currentPlaylist.some((item => item.id == id))) { // TODO: 
+				await fetch(`/api/info?id=${id}`, {
 					method: 'GET', // or 'PUT'
 					headers: {
 						'Content-Type': 'application/json',
@@ -533,7 +533,7 @@
 							playing: false
 						});
 						if (currentPlaylist.length == 1) {
-							playlist.innerHTML = "";
+							// playlist.innerHTML = "";
 							playingIndex = 0;
 							console.log("in addOnclick(), change index to:", playingIndex);
 							currentPlaylist[playingIndex].playing = true;
@@ -546,7 +546,7 @@
 					.catch((error) => {
 						console.error('Error:', error);
 					});
-					updateIndex();
+				updateIndex();
 
 
 			} else {
@@ -559,7 +559,33 @@
 		// TODO: delete a song from playlist
 		async function deleteOnclick(id) {
 			// console.log(id);
+			let current = currentPlaylist.find(item => item.playing == true);
+			console.log(current);
+			if (current.id == id) {
+				// 从播放列表删除的是当前播放的音乐
+				// 将当前播放设置成下一个并立即切换
+
+				if (playingIndex === currentPlaylist.length - 1) {
+					playingIndex = 0;
+				} else {
+					playingIndex += 1;
+				}
+				if (currentPlaylist.length == 1) {
+					audio.pause();
+					title.innerHTML = "";
+					artist.innerHTML = "";
+				} else {
+					currentPlaylist[playingIndex].playing = true;
+					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
+					getInfo(currentPlaylist[playingIndex].id);
+					audio.load();
+					audio.play();
+				}
+
+
+			}
 			currentPlaylist = arrayRemove(currentPlaylist, id);
+
 			// console.log(currentPlaylist);
 			playlist.innerHTML = "";
 			for (let song of currentPlaylist) {
@@ -580,14 +606,9 @@
 			}
 			updateIndex();
 		}
-		// TODO: 将播放列表数组元素改为包含信息的结构体
-		// 保留下标保存 在每次更改播放列表操作之后更新下标
-		// 结构体内保存 bool 值判断是否为当前播放
-		//
-		//
-
-		// TODO: 修改播放列表逻辑 在结构体中加上播放标记
+		
 		// TODO: 保存、读取播放列表到 json
+
 		// TODO: 随机播放功能
 		// TODO: 登录鉴权
 		// TODO: 配置文件组织

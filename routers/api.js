@@ -10,7 +10,7 @@ router.get('/song', async (ctx, next) => {
     console.log("ctx.query:", ctx.query);
     let data = await SongModel.findById(ctx.query.id);
     var readerStream = fs.createReadStream(data.url);
-    console.log(readerStream);
+    // console.log(readerStream);
     ctx.body = readerStream;
 });
 
