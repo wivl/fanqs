@@ -17,8 +17,6 @@ const SongType = {
 const SongModel = mongoose.model("song", new Schema(SongType));
 
 
-
-
 function listFile(dir, list = []) {
     var arr = fs.readdirSync(dir);
     arr.forEach(function (item) {
@@ -40,24 +38,46 @@ function listFile(dir, list = []) {
 // 创立 schema 存储 key 和基本信息
 
 function dbInit(cfg) {
-    console.log(cfg);
-    SongModel.deleteMany({}, function (err) { });
+    // console.log(cfg);
+    // SongModel.deleteMany({}, function (err) { });
     for (let folder of cfg.folders) {
         let songs = listFile(folder);
         for (let song of songs) {
             jsmediatags.read(song, {
-                onSuccess: function (tag) {
-                    SongModel.create({
+                onSuccess: async function (tag) {
+                    // 查找是否已经存在此音乐
+                    let findSong = await SongModel.findOne({
                         title: tag.tags.title,
                         artist: tag.tags.artist,
                         album: tag.tags.album,
-                        track: tag.tags.track,
-                        url: song
-                    }, (err, docs) => {
-                        if (!err) {
-                            console.log('插入成功' + docs)
-                        }
-                    })
+                        track: tag.tags.track
+                    });
+                    if (!findSong) {
+                        console.log(findSong);
+                        console.log("not exixts");
+                        // 不存在创建
+                        SongModel.create({
+                            title: tag.tags.title,
+                            artist: tag.tags.artist,
+                            album: tag.tags.album,
+                            track: tag.tags.track,
+                            url: song
+                        }, (err, docs) => {
+                            if (!err) {
+                                console.log('插入成功' + docs)
+                            }
+                        })
+                    } else {
+                        // 存在更新
+                        console.log("exists");
+                        findSong.title = tag.tags.title;
+                        findSong.artist = tag.tags.artist;
+                        findSong.album = tag.tags.album;
+                        findSong.track = tag.tags.track;
+
+                        findSong.save();
+                    }
+
                 },
                 onError: function (error) {
                     console.log(':(', error.type, error.info);
@@ -72,8 +92,19 @@ function dbFind(id) {
 
 }
 
+const PlaylistType = {
+    title: String,
+    artist: String,
+    album: String,
+    track: String,
+    url: String
+}
+
+const PlaylistModel = mongoose.model("playlist", new Schema(PlaylistType));
+
 module.exports = {
     dbInit,
     dbFind,
-    SongModel
+    SongModel,
+    PlaylistModel
 }
