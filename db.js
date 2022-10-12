@@ -66,7 +66,7 @@ function dbInit(cfg) {
                             if (!err) {
                                 console.log('插入成功' + docs)
                             }
-                        })
+                        });
                     } else {
                         // 存在更新
                         console.log("exists");
@@ -74,6 +74,7 @@ function dbInit(cfg) {
                         findSong.artist = tag.tags.artist;
                         findSong.album = tag.tags.album;
                         findSong.track = tag.tags.track;
+                        findSong.url = tag.tags.url;
 
                         findSong.save();
                     }
@@ -93,11 +94,8 @@ function dbFind(id) {
 }
 
 const PlaylistType = {
-    title: String,
-    artist: String,
-    album: String,
-    track: String,
-    url: String
+    name: String,
+    list: []
 }
 
 const PlaylistModel = mongoose.model("playlist", new Schema(PlaylistType));

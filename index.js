@@ -1,5 +1,6 @@
 const Koa = require('koa');
 const static = require('koa-static');
+const bodyParser = require('koa-bodyparser');
 const path = require('path');
 
 const app = new Koa();
@@ -13,6 +14,7 @@ require('./db')
 const router = require('./routers/index');
 
 app.use(static(path.join(__dirname, "public")));
+app.use(bodyParser());
 
 app.use(router.routes()).use(router.allowedMethods());
 

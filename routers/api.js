@@ -1,7 +1,7 @@
 const Router = require('koa-router');
 const router = new Router();
 const fs = require('fs');
-const { dbFind, dbInit, SongModel } = require('../db');
+const { dbFind, dbInit, SongModel, PlaylistModel } = require('../db');
 
 
 
@@ -30,17 +30,65 @@ router.get('/info', async (ctx, next) => {
 router.get('/songs', async (ctx, next) => {
     let songs;
     if (ctx.query.album !== "") {
-        songs = await SongModel.find({album: ctx.query.album});
+        songs = await SongModel.find({ album: ctx.query.album });
     } else {
         songs = await SongModel.find();
     }
-    
+
     console.log(songs);
     ctx.body = {
         songs
     };
 });
 
+router.get('/playlists', async (ctx, next) => {
+    let playlists = await PlaylistModel.find();
+
+    console.log(playlists);
+    ctx.body = {
+        playlists
+    };
+});
+
+router.get('/playlist', async (ctx, next) => {
+    // console.log("ctx.query:", ctx.query);
+    let data = await PlaylistModel.findById(ctx.query.id);
+    ctx.body = {
+        name: data.name,
+        list: data.list
+    }
+});
+
+// 保存为新的播放列表
+router.post('/playlist/save', (ctx, next) => {
+    console.log(typeof ctx.request.body);
+    console.log(ctx.request.body);
+
+    PlaylistModel.create({
+        name: ctx.request.body.name,
+        list: ctx.request.body.list
+    }, (err, docs) => {
+        if (!err) {
+            console.log('插入成功' + docs);
+        } else {
+            console.log(err);
+        }
+    })
+
+    ctx.body = {
+        ok: 1
+    }
+});
+
+// TODO: 添加一首歌到指定播放列表
+router.post('/playlist/add', (ctx, next) => {
+
+});
+
+// TODO: 从指定播放列表删除一首歌
+router.post('/playlist/delete', (ctx, next) => {
+
+});
 let cfg;
 
 fs.readFile('config.json',

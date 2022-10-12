@@ -16,6 +16,13 @@
 </head>
 
 <body>
+	<!-- 遮罩层 -->
+	<div class="modal" id="modal">
+		<div class="container">
+			<input type="text" name="playlist-name" id="playlist-name">
+			<button class="btn blue" id="save-new-playlist">[save]</button>
+		</div>
+	</div>
 
 	<h1>fanqs</h1>
 	<!-- 最大分栏 -->
@@ -41,7 +48,10 @@
 			<button class="btn yellow" id="volume-up">[v+]</button>
 			<button class="btn blue" id="init">[refresh]</button>
 			<br>
+			<button class="btn blue" id="save-playlist">[save]</button>
+			<br>
 			<h2>playlist</h2>
+			<!-- <input type="text" id="playlist-name" name="playlist-name" size="18"> -->
 			<ul class="song-list" id="playlist"></ul>
 		</div>
 		<div class="text-section col">
@@ -51,6 +61,8 @@
 			</ul>
 		</div>
 		<div class="lib-section col">
+			<h1>Playlists</h1>
+			<ul class="custom-playlist" id="custom-playlist"></ul>
 			<h1>Albums</h1>
 			<ul class="album-list" id="album-list">
 
@@ -69,6 +81,7 @@
 		const prev = document.getElementById("prev");
 		const next = document.getElementById("next");
 		const mode = document.getElementById("mode");
+		const savePlaylist = document.getElementById("save-playlist");
 		const volumeUp = document.getElementById("volume-up");
 		const volumeDown = document.getElementById("volume-down");
 		const volume = document.getElementById("volume");
@@ -81,19 +94,24 @@
 		const songList = document.getElementById("song-list");
 		const albumList = document.getElementById("album-list");
 		const playlist = document.getElementById("playlist");
+		const playlistName = document.getElementById("playlist-name");
+		const saveNewPlaylist = document.getElementById("save-new-playlist");
+		const savedPlaylist = document.getElementById("custom-playlist");
+		const modal = document.getElementById("modal");
+
 
 		// 播放模式
 		const PLAY_MODE = {
 			ORDER: 0,
 			LOOP: 1,
 			REPEAT: 2,
-			RANDOM: 3
+			SHUFFLE: 3
 		};
 
 		const modeList = [PLAY_MODE.LOOP,
 		PLAY_MODE.ORDER,
 		PLAY_MODE.REPEAT,
-		PLAY_MODE.RANDOM];
+		PLAY_MODE.SHUFFLE];
 
 		let modeIndex = 0;
 
@@ -176,6 +194,25 @@
 				});
 		}
 
+		function getPlaylists() {
+			fetch(`/api/playlists`, {
+				method: 'GET', // or 'PUT'
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			})
+				.then(response => response.json())
+				.then(data => {
+					for (let list of data.playlists) {
+						// console.log(typeof list.list, list.list);
+						savedPlaylist.innerHTML += `<li class="album"><a href="javascript:;" class="green album" onClick="playlistOnclick('${list._id}')">${list.name}</a></li>`;
+					}
+
+				}).catch((error) => {
+					console.error('Error:', error);
+				});
+		}
+
 		function getInfo(id) {
 			fetch(`/api/info?id=${id}`, {
 				method: 'GET', // or 'PUT'
@@ -217,6 +254,7 @@
 
 		window.onload = () => {
 			getSongs();
+			getPlaylists();
 		}
 
 		play.onclick = () => {
@@ -283,10 +321,42 @@
 				case PLAY_MODE.REPEAT:
 					mode.innerHTML = '[REPEAT]';
 					break;
-				case PLAY_MODE.RANDOM:
-					mode.innerHTML = '[RANDOM]';
+				case PLAY_MODE.SHUFFLE:
+					mode.innerHTML = '[SHUFFLE]';
 					break;
 			}
+		}
+
+		// 弹出对话框
+		savePlaylist.onclick = () => {
+			modal.style.display = "inline";
+		}
+
+		// TODO: 保存、读取播放列表到 json
+		// id 在后端生成
+		// 如果 id 为空 则保存为新的文档
+		// 如果 id 不为空 则更新文档
+		saveNewPlaylist.onclick = () => {
+			// 使用 fetch 传输数据到
+			let data = {
+				name: playlistName.value,
+				list: currentPlaylist
+			}
+			fetch(`/api/playlist/save`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(data),
+			})
+				.then(response => response.json())
+				.then(data => {
+					console.log('Success:', data);
+				})
+				.catch((error) => {
+					console.error('Error:', error);
+				});
+			modal.style.display = "none";
 		}
 
 
@@ -395,10 +465,18 @@
 					}
 					currentPlaylist[playingIndex].playing = true;
 					break;
-				// TODO: random
-				// case PLAY_MODE.RANDOM:
-
-				// 	break;
+				// TODO: SHUFFLE
+				case PLAY_MODE.SHUFFLE:
+					currentPlaylist[playingIndex].playing = false;
+					// 随机生成索引
+					playingIndex = Math.floor(Math.random() * currentPlaylist.length);
+					console.log(playingIndex);
+					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
+					audio.load();
+					getInfo(currentPlaylist[playingIndex].id);
+					audio.play();
+					currentPlaylist[playingIndex].playing = true;
+					break;
 
 				default:
 					// 默认 repeat
@@ -411,13 +489,13 @@
 		// callbacks
 		//========================
 
-		function songOnclick(id) {
+		async function songOnclick(id) {
 			console.log(id);
 
 			currentPlaylist.splice(0, currentPlaylist.length);
 			playlist.innerHTML = "";
 
-			fetch(`/api/info?id=${id}`, {
+			await fetch(`/api/info?id=${id}`, {
 				method: 'GET', // or 'PUT'
 				headers: {
 					'Content-Type': 'application/json',
@@ -574,6 +652,7 @@
 					audio.pause();
 					title.innerHTML = "";
 					artist.innerHTML = "";
+					audioTime.innerHTML = "0";
 				} else {
 					currentPlaylist[playingIndex].playing = true;
 					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
@@ -606,8 +685,59 @@
 			}
 			updateIndex();
 		}
-		
-		// TODO: 保存、读取播放列表到 json
+
+		// TODO: 获取 playlist 内容
+		function playlistOnclick(id) {
+			console.log(id);
+			fetch(`/api/playlist?id=${id}`, {
+				method: 'GET', // or 'PUT'
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			})
+				.then(response => response.json())
+				.then(data => {
+					console.log(data.name, data.list);
+					// TODO: 在 playlist 显示并播放
+					currentPlaylist.splice(0, currentPlaylist.length);
+					playlist.innerHTML = "";
+					for (let li of data.list) {
+						currentPlaylist.push({
+							id: li.id,
+							playing: false
+						});
+						fetch(`/api/info?id=${li.id}`, {
+							method: 'GET', // or 'PUT'
+							headers: {
+								'Content-Type': 'application/json'
+							}
+						})
+							.then(response => response.json())
+							.then(data => {
+								playlist.innerHTML += `<li class="song">${data.title}<a href="javascript:;" class="add yellow" onClick="deleteOnclick('${data.id}')">[-]</a></li>`;
+							})
+							.catch((error) => {
+								console.error('Error:', error);
+							});
+					}
+					// 更新第一个的播放状态
+					playingIndex = 0;
+					console.log("in playlistOnclick(), change index to:", playingIndex);
+					currentPlaylist[playingIndex].playing = true;
+
+					audio.src = 'http://localhost:8964/api/song?' + `id=${currentPlaylist[playingIndex].id}`;
+					audio.load();
+					getInfo(currentPlaylist[playingIndex].id);
+					audio.play();
+				})
+				.catch((error) => {
+					console.error('Error:', error);
+				});
+		}
+
+
+
+
 
 		// TODO: 随机播放功能
 		// TODO: 登录鉴权
