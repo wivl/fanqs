@@ -28,3 +28,7 @@ node index.js
 ```
 
 then go http://localhost:8964/ and click the refrash button at first launch.
+
+### links
+
+favicon generete by [favicon.io](https://favicon.io/favicon-generator/)
