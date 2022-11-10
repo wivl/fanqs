@@ -8,4 +8,5 @@ const apiRouter = require('./api');
 router.redirect('/', '/public/index.html');
 router.use('/api', apiRouter.routes(), apiRouter.allowedMethods());
 
+
 module.exports = router;

@@ -3,6 +3,9 @@ const router = new Router();
 const fs = require('fs');
 const { dbFind, dbInit, SongModel, PlaylistModel } = require('../db');
 
+function returnStream(body, stream) {
+    body = stream;
+}
 
 
 // audio play song api
