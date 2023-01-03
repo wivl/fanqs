@@ -106,7 +106,7 @@ fs.readFile('config.json',
     });
 
 router.get('/db/init', async (ctx, next) => {
-    await dbInit(cfg);
+    await dbInit();
     ctx.body = {
         ok: 1
     }

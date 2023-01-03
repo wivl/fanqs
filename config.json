@@ -1,4 +1,5 @@
 {
     "folders": ["/Users/weevil/Documents/music_library", "/Users/weevil/Documents/[radio]"],
-    "url": "http://localhost:8964/"
+    "url": "http://localhost:8964/",
+    "scanTime": "1"
 }

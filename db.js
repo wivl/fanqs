@@ -16,6 +16,21 @@ const SongType = {
 
 const SongModel = mongoose.model("song", new Schema(SongType));
 
+let cfg
+
+fs.readFile('config.json',
+    // 读取文件完成时调用的回调函数
+    function (err, data) {
+        // json数据
+        var jsonData = data;
+        // 解析json
+        cfg = JSON.parse(jsonData);
+        setInterval(dbInit, cfg.scanTime * 60 * 60 * 1000)
+        // console.log(cfg);
+        // console.log(listFile(cfg.folders[0]));
+    });
+
+
 
 function listFile(dir, list = []) {
     var arr = fs.readdirSync(dir);
@@ -37,7 +52,7 @@ function listFile(dir, list = []) {
 // 对 tag 整理信息并存数据库
 // 创立 schema 存储 key 和基本信息
 
-function dbInit(cfg) {
+function dbInit() {
     // console.log(cfg);
     // SongModel.deleteMany({}, function (err) { });
     for (let folder of cfg.folders) {
@@ -87,6 +102,7 @@ function dbInit(cfg) {
         }
     }
 }
+
 
 // TODO: 数据库查找
 function dbFind(id) {

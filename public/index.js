@@ -362,7 +362,7 @@ audio.addEventListener('pause', () => {
 	// }
 }, false);
 
-// 判断播放模式
+// 一首歌播放结束，判断播放模式
 audio.addEventListener('ended', () => {
 	console.log("[event] ended");
 	switch (modeList[modeIndex]) {
@@ -674,8 +674,8 @@ function playlistOnclick(id) {
 		});
 }
 
-// TODO: 登录鉴权
 // TODO: 配置文件组织
+// TODO: 登录鉴权
 // TODO: 部署测试
 // TODO: 代码工程化
 
